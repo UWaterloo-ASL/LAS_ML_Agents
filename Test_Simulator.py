@@ -27,8 +27,13 @@ elif sys.platform == "darwin":
 train_mode = True  # Whether to run the environment in training or inference mode
 
 # 3. Start the environment
-# env = UnityEnvironment(file_name=env_name, , seed=1)
-env = UnityEnvironment(file_name=None, seed=1)
+#    interact_with_app == True: interact with application
+#    interact_with_app == False: interact with Unity scene starting by click play in Unity
+interact_with_app = True
+if interact_with_app == True:
+    env = UnityEnvironment(file_name=env_name, seed=1)
+else:
+    env = UnityEnvironment(file_name=None, seed=1)
 
 # Set the default brain to work with
 default_brain = env.brain_names[0]
