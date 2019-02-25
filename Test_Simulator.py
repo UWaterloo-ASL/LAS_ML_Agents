@@ -29,7 +29,7 @@ train_mode = True  # Whether to run the environment in training or inference mod
 # 3. Start the environment
 #    interact_with_app == True: interact with application
 #    interact_with_app == False: interact with Unity scene starting by click play in Unity
-interact_with_app = True
+interact_with_app = False
 if interact_with_app == True:
     env = UnityEnvironment(file_name=env_name, seed=1)
 else:
@@ -38,7 +38,8 @@ else:
 # Set the default brain to work with
 default_brain = env.brain_names[0]
 brain = env.brains[default_brain]
-
+# import pdb
+# pdb.set_trace()
 # 4. Examine the observation and state spaces
 # Reset the environment
 env_info = env.reset(train_mode=train_mode)[default_brain]
@@ -63,8 +64,9 @@ for episode in range(100):
     while not done:
         action_size = brain.vector_action_space_size
         if brain.vector_action_space_type == 'continuous':
-            env_info = env.step(np.random.randn(len(env_info.agents),
-                                                action_size[0]))[default_brain]
+            # action = {'brain1':[1.0, 2.0], 'brain2':[3.0,4.0]}
+            action = {brain.brain_name: np.random.randn(brain.vector_action_space_size[0])}
+            env_info = env.step(action)[default_brain]
         else:
             action = np.column_stack([np.random.randint(0, action_size[i], size=(len(env_info.agents))) for i in range(len(action_size))])
             env_info = env.step(action)[default_brain]
