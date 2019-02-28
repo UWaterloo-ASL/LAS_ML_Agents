@@ -15,21 +15,39 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mlagents.envs import UnityEnvironment
 
+
+def visitor_behavior(observation, node_number):
+    visitor_action = np.random.uniform(low=-1, high=1, size=2)*np.array([20, 10])
+    for i in range(node_number):
+        if observation[i] >0:
+            x = observation[node_number+i*2]
+            y = observation[node_number+i*2+1]
+            visitor_action = [x, y]
+    return visitor_action
+
+
+def LAS_behavior(p, action_dimension):
+    if np.random.rand(1) < p:
+        return np.random.randn(action_dimension)
+    else:
+        return np.zeros(action_dimension)
+
 # 2. Set environment parameters
 # Detect Operating System and Choose the Unity environment binary to launch
-if sys.platform == "linux" or sys.platform == "linux2":
-    env_name = os.path.join('..', 'LAS_Simulator_Linux', 'LAS_Simulator')
-elif sys.platform == "win32":
-    env_name = os.path.join('..', 'LAS_Simulator_Windows', 'LAS_Simulator')
-elif sys.platform == "darwin":
-    env_name = os.path.join('..', 'LAS_Simulator_Mac', 'LAS_Simulator')
+# if sys.platform == "linux" or sys.platform == "linux2":
+#     env_name = os.path.join('..', 'LAS_Simulator_Linux', 'LAS_Simulator')
+# elif sys.platform == "win32":
+#     env_name = os.path.join('..', 'LAS_Simulator_Windows', 'LAS_Simulator')
+# elif sys.platform == "darwin":
+#     env_name = os.path.join('..', 'LAS_Simulator_Mac', 'LAS_Simulator')
+
 
 train_mode = True  # Whether to run the environment in training or inference mode
-
+env_name = 'LASScene/LAS_Simulator'
 # 3. Start the environment
 #    interact_with_app == True: interact with application
 #    interact_with_app == False: interact with Unity scene starting by click play in Unity
-interact_with_app = False
+interact_with_app = True
 if interact_with_app == True:
     env = UnityEnvironment(file_name=env_name, seed=1)
 else:
@@ -58,20 +76,23 @@ for observation in env_info.visual_observations:
 # 5. Take random actions in the environment
 
 for episode in range(100):
-    env_info = env.reset(train_mode=train_mode)[default_brain]
+    env_info = env.reset(train_mode=train_mode)
     done = False
     episode_rewards = 0
     while not done:
         action_size = brain.vector_action_space_size
         if brain.vector_action_space_type == 'continuous':
             # action = {'brain1':[1.0, 2.0], 'brain2':[3.0,4.0]}
-            action = {brain.brain_name: np.random.randn(brain.vector_action_space_size[0])}
-            env_info = env.step(action)[default_brain]
-        else:
-            action = np.column_stack([np.random.randint(0, action_size[i], size=(len(env_info.agents))) for i in range(len(action_size))])
-            env_info = env.step(action)[default_brain]
-        episode_rewards += env_info.rewards[0]
-        done = env_info.local_done[0]
+            LAS_action = LAS_behavior(p=0.1, action_dimension=brain.vector_action_space_size[0])
+            Visitor_action = visitor_behavior(env_info['VisitorBrain'].vector_observations[0],node_number=24)
+            # LAS_action = np.ones(brain.vector_action_space_size[0])*0.1
+            action = {brain.brain_name: LAS_action, 'VisitorBrain': Visitor_action}
+            # print("LED_Action: {}".format(LAS_action[:24]))
+            env_info = env.step(action)
+
+        episode_rewards += env_info[brain.brain_name].rewards[0]
+        done = env_info[brain.brain_name].local_done[0]
+
     print("Total reward of episode {}: {}".format(episode, episode_rewards))
 
 # 6. Close the environment when finished
